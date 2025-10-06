@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pip-Pedro — Trilha de Estudos (FIEL ao material)</title>
+<style>
+  :root{ --bg:#0a0f0a; --scan:#0f200f; --fg:#7CFFA5; --accent:#D5FFDF; --muted:#5dd98b; --panel:#0a140a; --border:#1c4a24; --screw:#223e28; }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at center,var(--scan) 0%,#061006 70%) fixed;color:var(--fg);font-family:"Courier New",monospace}
+  .pipwatch{position:relative;padding:12px;background:linear-gradient(180deg,#0c160c,#061006 60%);border-bottom:1px solid var(--border);overflow:hidden}
+  .pipwatch-inner{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .watch-bezel{width:160px;height:160px;min-width:160px;border-radius:20px;background:radial-gradient(circle at 50% 48%, #0d1a0f 0%, #0b160c 60%, #081208 100%);border:2px solid #15321d; position:relative; box-shadow:inset 0 0 22px #0007, 0 0 18px #0006}
+  .watch-screen{position:absolute; inset:10px; border-radius:12px; background:#071107; border:1px solid #11311b; overflow:hidden}
+  .scanlines::before{content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(124,255,165,0.06), rgba(124,255,165,0.06) 1px, transparent 2px, transparent 5px); mix-blend-mode:screen; pointer-events:none; animation:scan 6s linear infinite}
+  @keyframes scan{0%{transform:translateY(-10%)}50%{transform:translateY(10%)}100%{transform:translateY(-10%)}} 
+  .watch-ui{position:absolute; inset:0; display:grid; grid-template-rows:1fr auto; padding:6px}
+  .watch-hhmm{font-size:36px; letter-spacing:1px; text-align:center; margin-top:24px}
+  .watch-date,.watch-sec{font-size:11px;color:var(--muted);text-align:center}
+  .watch-bottom{display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--muted);padding:0 6px 6px}
+  .battery{width:60px;height:8px;border:1px solid var(--border);border-radius:4px; position:relative}
+  .battery::after{content:""; position:absolute; right:-5px; top:1px; width:4px; height:6px; background:#11311b; border:1px solid var(--border); border-left:none; border-radius:0 2px 2px 0}
+  .battery .fill{height:100%; width:70%; background:linear-gradient(90deg,#26ff8a,#6bffb0)}
+  .screw{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--screw);border:1px solid #152b1b;box-shadow:inset 0 0 4px #0008}
+  .screw::after{content:""; position:absolute; left:3px; right:3px; top:6px; height:2px; background:#0a1a10}
+  .s1{left:6px; top:6px} .s2{right:6px; top:6px} .s3{left:6px; bottom:6px} .s4{right:6px; bottom:6px}
+  .titlebar h1{font-size:18px;margin:0;letter-spacing:1px}
+  .titlebar .sub{font-size:12px;color:var(--muted)}
+  .top-actions{margin-left:auto;display:flex;gap:8px}
+  button{background:transparent;border:1px solid var(--border);color:var(--fg);padding:10px 12px;border-radius:10px;cursor:pointer;width:100%}
+  button:hover{background:rgba(124,255,165,.12)}
+  button[disabled]{opacity:.5;cursor:not-allowed}
+  #wrap{max-width:980px;margin:12px auto;padding:10px;display:grid;grid-template-columns:1fr;gap:10px}
+  .panel{border:1px solid var(--border);border-radius:12px;padding:12px;background:rgba(7,17,7,.5);box-shadow:inset 0 0 10px rgba(0,0,0,.5)}
+  .title{font-weight:bold;margin-bottom:8px;text-transform:uppercase;font-size:12px;color:var(--accent)}
+  .muted{color:var(--muted)}
+  .grid{display:grid;gap:8px}
+  .cols2{grid-template-columns:1fr 1fr}
+  .log{max-height:220px;overflow:auto;border:1px dashed var(--border);padding:8px;border-radius:8px;background:rgba(0,0,0,.2);font-size:12px}
+  #mapWrap{border:1px dashed var(--border);border-radius:10px;padding:10px;background:rgba(0,0,0,.2)}
+  #map{display:flex;align-items:center;gap:8px;overflow:auto;padding-bottom:6px}
+  .node{display:grid;justify-items:center;gap:6px;min-width:88px}
+  .dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);background:#0b150b;display:grid;place-items:center}
+  .dot span{width:14px;height:14px;border-radius:50%;background:#184e2a}
+  .node.done .dot span{background:#17d96a;box-shadow:0 0 10px #17d96a88}
+  .node.curr .dot{border-color:#7cffb0}
+  .node.curr .dot span{background:#7cffb0}
+  .node label{font-size:11px;text-align:center}
+  .arrow{width:40px;min-width:40px;height:2px;background:linear-gradient(90deg,#214a2a,#357d47);position:relative}
+  .arrow::after{content:""; position:absolute; right:-2px; top:-4px; border:6px solid transparent; border-left-color:#357d47}
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:99}
+  .card{width:min(720px,92vw);background:#081108;border:1px solid var(--border);border-radius:12px;padding:14px}
+  .small{font-size:12px}
+  .summary{border:1px dashed var(--border);padding:10px;border-radius:10px;background:rgba(0,0,0,.15);font-size:13px;line-height:1.35}
+  .choice{width:100%;text-align:left}
+  @media (min-width:640px){#wrap{grid-template-columns:320px 1fr}}
+</style>
+</head>
+<body>
+  <div class="pipwatch">
+    <div class="pipwatch-inner">
+      <div class="watch-bezel">
+        <div class="screw s1"></div><div class="screw s2"></div><div class="screw s3"></div><div class="screw s4"></div>
+        <div class="watch-screen scanlines">
+          <div class="watch-ui">
+            <div>
+              <div id="watch-hhmm" class="watch-hhmm">--:--</div>
+              <div id="watch-date" class="watch-date">---</div>
+              <div id="watch-sec" class="watch-sec">-- s</div>
+            </div>
+            <div class="watch-bottom">
+              <div>MODE: ESTUDO</div>
+              <div class="battery"><div id="batFill" class="fill"></div></div>
+              <div>Trilha</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="titlebar">
+        <div>
+          <h1>📟 Pip-Pedro — Células & Tecidos (Fiel ao PDF)</h1>
+          <div class="sub">Estudo guiado + quiz com o texto da apresentação</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="btnReset">Zerar progresso</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="wrap">
+    <section class="panel">
+      <div class="title">Objetivo</div>
+      <div id="objective" class="small"></div>
+
+      <div class="title" style="margin-top:12px">Mapa da Trilha</div>
+      <div id="mapWrap">
+        <div id="map">
+          <div class="node" id="n-org"><div class="dot"><span></span></div><label>Organização</label></div>
+          <div class="arrow"></div>
+          <div class="node" id="n-tipos"><div class="dot"><span></span></div><label>Tipos de Célula</label></div>
+          <div class="arrow"></div>
+          <div class="node" id="n-memb"><div class="dot"><span></span></div><label>Membrana</label></div>
+          <div class="arrow"></div>
+          <div class="node" id="n-organelas"><div class="dot"><span></span></div><label>Organelas</label></div>
+          <div class="arrow"></div>
+          <div class="node" id="n-tec"><div class="dot"><span></span></div><label>Tecidos</label></div>
+          <div class="arrow"></div>
+          <div class="node" id="n-pele"><div class="dot"><span></span></div><label>Pele/Epitélio</label></div>
+          <div class="arrow"></div>
+          <div class="node" id="n-micro"><div class="dot"><span></span></div><label>Microscopia</label></div>
+        </div>
+      </div>
+
+      <div class="title" style="margin-top:12px">Registro</div>
+      <div id="log" class="log"></div>
+    </section>
+
+    <section class="panel">
+      <div class="title">Local</div>
+      <div id="locName"><b>Abrigo — Início</b></div>
+      <div class="muted small" id="locDesc">Estude a seção e depois faça 2 de 3 no quiz.</div>
+
+      <div class="title" style="margin-top:10px">Ações</div>
+      <div id="choices" class="grid"></div>
+    </section>
+  </div>
+
+  <div class="modal" id="quizModal" role="dialog" aria-modal="true">
+    <div class="card">
+      <div id="modalTitle" class="title"></div>
+      <div id="sectionSummary" class="summary" style="display:none"></div>
+      <div id="qContext" class="small muted" style="margin-top:6px"></div>
+      <div id="qText" style="margin:6px 0 8px"></div>
+      <div id="qAns" class="grid cols2"></div>
+      <div id="qFeedback" class="small" style="margin-top:8px"></div>
+      <div class="small muted" id="qCounter"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="qClose">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+function clickSfx(){ try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); o.type='square'; o.frequency.value=800; g.gain.value=.08; o.connect(g).connect(ctx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06); o.stop(ctx.currentTime + 0.06);}catch{} }
+
+/* ===== RESUMOS — somente frases do PDF (paráfrase mínima) ===== */
+const SUMMARIES = {
+  org: `• “TODO SER VIVO É FORMADO POR CÉLULA”. Células com estruturas e funções semelhantes se agrupam formando <b>tecidos</b>. A união de diferentes tecidos forma <b>órgãos</b>; órgãos que trabalham para uma função formam <b>sistemas</b>; o conjunto dos sistemas compõe o <b>organismo</b>.`,
+  tipos: `• <b>Procariontes</b>: encontradas em bactérias e arqueias; têm membrana plasmática; <b>não possuem núcleo</b> nem outras organelas membranosas; DNA disperso no citoplasma; possuem <b>parede celular</b> e <b>ribossomos</b>. • <b>Eucariontes</b>: podem ser animais (sem parede celular) ou vegetais (com parede).`,
+  memb: `• <b>Membrana plasmática</b>, presente em <b>todas as células</b>, contorna a célula e é por onde ocorre a <b>entrada e a saída</b> de substâncias.`,
+  organelas: `• <b>RER</b>: produção de proteínas. • <b>REL</b>: transporte/produção de lipídios. • <b>Mitocôndrias</b>: gerar energia para a célula. • <b>Complexo golgiense</b>: secretar proteínas para transporte. • <b>Lisossomos</b>: digestão intracelular. • <b>Centríolos</b>: formação de cílios e flagelos. • Em vegetais: <b>vacúolos</b> (armazenam, sobretudo água), <b>cloroplastos</b> (fotossíntese), <b>parede celular celulósica</b> (protege o conteúdo).`,
+  tec: `• Tecidos são conjuntos celulares que desempenham determinada função. Nos animais: <b>epitelial, conjuntivo, muscular, nervoso</b>. O <b>epitelial</b> reveste superfícies externas (pele) e cavidades internas; união forte entre células → barreira contra invasores e perda de líquidos.`,
+  pele: `• <b>Pele</b> tem três camadas: <b>epiderme</b> (evita desidratação e entrada de invasores; contém melanócitos que produzem melanina), <b>derme</b> (resistência/elasticidade; folículos, glândulas, vasos, nervos apoiados no colágeno), <b>hipoderme</b> (camada final; conserva calor e absorve choques, camada de gordura). O <b>conjuntivo</b> realiza conexão, sustentação, defesa, preenchimento, transporte e reserva; é vascularizado (exceto cartilagem), tem <b>matriz extracelular</b> e o <b>sangue</b> transporta gases, excretas, nutrientes e produtos celulares.`,
+  micro: `• <b>Robert Hooke</b>: microscópio composto (duas lentes); observou cortiça (tecido vegetal morto) e descreveu “células” ao ver os compartimentos. • Microscópios modernos: <b>óptico</b> e <b>eletrônico</b>.`
+};
+
+/* ===== QUESTÕES — construídas só com o que está no PDF ===== */
+const QUESTIONS = {
+  org: [
+    {context:"Texto do slide: “TODO SER VIVO É FORMADO POR CÉLULA”.", 
+     q:"O conjunto de células com estruturas e funções semelhantes recebe o nome de:", 
+     a:["órgão","tecido","organismo","sistema"], ok:1}, // filecite turn1file0 L33-L41
+    {context:"Sequência descrita nos slides de níveis de organização.", 
+     q:"Complete: células → tecidos → órgãos → sistemas → ____", 
+     a:["organismo","biosfera","átomo","molécula"], ok:0}, // filecite turn1file1 L48-L56
+    {context:"Conceito geral do capítulo.", 
+     q:"Quem é a unidade básica dos seres vivos?", 
+     a:["tecido","órgão","célula","sistema"], ok:2} // inferido do enunciado "todo ser vivo é formado por célula"
+  ],
+  tipos: [
+    {context:"Teste do slide “TE TESTANDO”.", 
+     q:"Organismos procariontes se destacam pela:", 
+     a:["ausência de membrana plasmática","ausência de citoplasma","ausência de núcleo delimitado por membrana","ausência de material genético"], ok:2}, // filecite turn1file3 L52-L59
+    {context:"Animal × Vegetal.", 
+     q:"Nas células eucarióticas, assinale a comparação correta:", 
+     a:["animal tem parede celular; vegetal não tem","vegetal tem parede celular; animal não tem","nenhuma tem parede celular","ambas têm parede celular"], ok:1}, // filecite turn1file3 L67-L69
+    {context:"Procariontes — estruturas citadas.", 
+     q:"Quais estruturas são listadas para procariontes?", 
+     a:["carioteca e cloroplastos","membrana, parede celular e ribossomos","vacúolos e lisossomos","centrossomos e REL"], ok:1} // filecite turn1file0 L97-L108
+  ],
+  memb: [
+    {context:"Definição literal do slide.", 
+     q:"A membrana plasmática está presente em:", 
+     a:["apenas células animais","todas as células","apenas células vegetais","apenas procariontes"], ok:1}, // filecite turn1file3 L15-L18
+    {context:"Função descrita no slide.", 
+     q:"Ela contorna a célula e é por onde ocorre:", 
+     a:["a formação do DNA","a entrada e a saída de substâncias","apenas a entrada de água","a produção de ATP"], ok:1}, // filecite turn1file3 L18-L22
+    {context:"Reforço da definição.", 
+     q:"Qual alternativa está de acordo com o slide sobre membrana plasmática?", 
+     a:["é exclusiva de animais","é onde ocorre entrada e saída de substâncias","substitui a parede celular","armazena o material genético"], ok:1} // filecite turn1file3 L18-L22
+  ],
+  organelas: [
+    {context:"Lista de organelas e funções (animal).", 
+     q:"O retículo endoplasmático rugoso (RER) tem como função:", 
+     a:["produção de proteínas","produção de ATP","digestão intracelular","formação de cílios"], ok:0}, // filecite turn1file1 L1-L3
+    {context:"Lista de organelas e funções (animal).", 
+     q:"O complexo golgiense é responsável por:", 
+     a:["secretar proteínas para transporte","armazenar água","produzir DNA","fotossíntese"], ok:0}, // filecite turn1file1 L5-L6
+    {context:"Lista de organelas e funções (animal).", 
+     q:"Qual alternativa corresponde à função da mitocôndria?", 
+     a:["gerar energia para a célula","formar parede celular","armazenar pigmentos","conduzir impulsos"], ok:0}, // filecite turn1file1 L4-L4
+    {context:"Lista de organelas e funções (animal).", 
+     q:"Lisossomos realizam principalmente:", 
+     a:["digestão intracelular","fotossíntese","síntese de lipídios","transporte ativo"], ok:0}, // filecite turn1file1 L8-L8
+    {context:"Lista de organelas e funções (animal).", 
+     q:"Centríolos participam da formação de:", 
+     a:["cílios e flagelos","cloroplastos","vacúolos","ribossomos"], ok:0}, // filecite turn1file1 L9-L10
+    {context:"Lista vegetal.", 
+     q:"Nos vegetais, vacúolos têm função principal de:", 
+     a:["armazenamento (principalmente água)","geração de ATP","condução de impulsos","contração"], ok:0}, // filecite turn1file1 L23-L25
+    {context:"Lista vegetal.", 
+     q:"Cloroplastos:", 
+     a:["produzem alimento por fotossíntese","digestão intracelular","armazenam água","formam cílios"], ok:0}, // filecite turn1file1 L26-L27
+    {context:"Lista vegetal.", 
+     q:"A parede celular celulósica:", 
+     a:["protege o conteúdo celular","delimita o núcleo","produz proteínas","é exclusiva de animais"], ok:0} // filecite turn1file1 L29-L29
+  ],
+  tec: [
+    {context:"Definição nos slides.", 
+     q:"Tecidos são:", 
+     a:["células isoladas sem função","conjuntos celulares que desempenham determinada função","apenas órgãos de revestimento","estruturas sem especialização"], ok:1}, // filecite turn1file2 L35-L38
+    {context:"Quatro grupos citados.", 
+     q:"Nos animais, os quatro grandes grupos de tecidos incluem:", 
+     a:["epitelial, conjuntivo, muscular e nervoso","epidérmico, ósseo, adiposo e nervoso","xilema, floema, colênquima e parênquima","meristemas e parênquimas"], ok:0}, // filecite turn1file1 L100-L103
+    {context:"Epitelial — função e local.", 
+     q:"O tecido epitelial tem função de:", 
+     a:["revestimento de superfícies externas e cavidades internas","armazenamento de água","contração","condução elétrica"], ok:0} // filecite turn1file2 L54-L59
+  ],
+  pele: [
+    {context:"Camadas da pele.", 
+     q:"A pele é constituída por:", 
+     a:["epiderme, derme e hipoderme","derme, hipoderme e endoderme","epiderme e hipoderme apenas","derme e epidermis (duas camadas)"], ok:0}, // filecite turn1file2 L74-L77
+    {context:"Função da epiderme.", 
+     q:"Segundo o slide, a epiderme:", 
+     a:["evita desidratação e entrada de invasores","é a camada de gordura","é responsável pela fotossíntese","produz ATP"], ok:0}, // filecite turn1file2 L78-L86
+    {context:"Derme.", 
+     q:"A derme é responsável por:", 
+     a:["resistência e elasticidade; folículos, glândulas, vasos e nervos no colágeno","barreira contra desidratação","reserva energética","produção de melanina"], ok:0}, // filecite turn1file2 L94-L106
+    {context:"Hipoderme.", 
+     q:"A hipoderme:", 
+     a:["conserva calor e absorve choques (camada de gordura)","é a camada externa","conduz impulsos nervosos","é o local da fotossíntese"], ok:0} // filecite turn1file2 L112-L119
+  ],
+  micro: [
+    {context:"Descoberta da célula.", 
+     q:"Robert Hooke utilizou um microscópio:", 
+     a:["composto (duas lentes)","eletrônico","sem lente","de raios X"], ok:0}, // filecite turn1file0 L47-L55
+    {context:"Cortiça no slide.", 
+     q:"Em cortiça, Hooke observou principalmente:", 
+     a:["os espaços/compartimentos (as ‘células’)","mitocôndrias vivas","DNA","cloroplastos"], ok:0}, // filecite turn1file0 L50-L55
+    {context:"Tipos modernos.", 
+     q:"Quais microscópios modernos aparecem no slide?", 
+     a:["óptico e eletrônico","ultravioleta e gama","óptico apenas","eletrônico apenas"], ok:0} // filecite turn1file0 L59-L63
+  ]
+};
+
+/* ===== TRILHA ===== */
+const SECTIONS = [
+  {key:'org', label:'Organização dos seres vivos'},
+  {key:'tipos', label:'Tipos de célula'},
+  {key:'memb', label:'Membrana plasmática'},
+  {key:'organelas', label:'Organelas'},
+  {key:'tec', label:'Tecidos'},
+  {key:'pele', label:'Pele & Epitélio'},
+  {key:'micro', label:'Microscopia'}
+];
+
+const state = { passed:{org:false,tipos:false,memb:false,organelas:false,tec:false,pele:false,micro:false}, loc:'start' };
+
+const objective=document.getElementById('objective');
+const locName=document.getElementById('locName');
+const locDesc=document.getElementById('locDesc');
+const choices=document.getElementById('choices');
+const logEl=document.getElementById('log');
+const btnReset=document.getElementById('btnReset');
+
+function log(t){ logEl.innerHTML += `• ${t}<br>`; logEl.scrollTop = logEl.scrollHeight; }
+function currentStep(){ for(let i=0;i<SECTIONS.length;i++){ if(!state.passed[SECTIONS[i].key]) return i; } return SECTIONS.length; }
+function renderObjective(){ const i=currentStep(); objective.textContent = i<SECTIONS.length ? `Estude a seção: ${SECTIONS[i].label} e acerte 2/3 no quiz.` : "Trilha concluída. Clique em “Concluir estudo”."; }
+function save(){ try{ localStorage.setItem("pipPedroStudyV1", JSON.stringify(state)); }catch{} }
+function load(){ try{ const s=JSON.parse(localStorage.getItem("pipPedroStudyV1")||"null"); if(s) Object.assign(state,s); }catch{} }
+
+function renderMap(){
+  const domIds = ['n-org','n-tipos','n-memb','n-organelas','n-tec','n-pele','n-micro'];
+  domIds.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.className='node';
+    if(state.passed[SECTIONS[i].key]) el.classList.add('done');
+    if(i===currentStep()) el.classList.add('curr');
+  });
+}
+
+function gotoStart(){
+  state.loc='start'; save();
+  locName.innerHTML='<b>Abrigo — Início</b>';
+  locDesc.textContent='Estude cada área e depois faça o quiz (2/3).';
+  choices.innerHTML='';
+  const i=currentStep();
+  if(i<SECTIONS.length){
+    addChoice(`Estudar: ${SECTIONS[i].label}`, ()=>openSummary(SECTIONS[i].key));
+    addChoice(`Quiz (2 de 3): ${SECTIONS[i].label}`, ()=>startQuiz(SECTIONS[i].key));
+  } else {
+    addChoice('Concluir estudo', ()=>{ log('<b>Parabéns! Trilha concluída.</b>'); });
+  }
+  renderObjective(); renderMap();
+}
+function addChoice(label,fn){ const b=document.createElement('button'); b.className='choice'; b.textContent=label; b.onclick=()=>{ clickSfx(); fn(); }; choices.appendChild(b); }
+
+const quizModal=document.getElementById('quizModal');
+const modalTitle=document.getElementById('modalTitle');
+const sectionSummary=document.getElementById('sectionSummary');
+const qContext=document.getElementById('qContext');
+const qText=document.getElementById('qText');
+const qAns=document.getElementById('qAns');
+const qFeedback=document.getElementById('qFeedback');
+const qCounter=document.getElementById('qCounter');
+document.getElementById('qClose').onclick=()=>{ quizModal.style.display='none'; };
+
+function openSummary(key){
+  modalTitle.textContent = 'Resumo — ' + sectionLabel(key);
+  sectionSummary.style.display='block';
+  sectionSummary.innerHTML = SUMMARIES[key];
+  qContext.textContent=''; qText.textContent=''; qAns.innerHTML=''; qFeedback.textContent=''; qCounter.textContent='';
+  quizModal.style.display='flex';
+}
+
+/* ===== QUIZ (meta dinâmica + término imediato + proteção contra duplo clique) ===== */
+function startQuiz(key){
+  const pool = QUESTIONS[key].slice();
+  shuffle(pool);
+
+  const picks = pool.slice(0, Math.min(3, pool.length)); // até 3
+  const target = Math.min(2, picks.length);              // meta 2, ou 1 se só houver 1 pergunta
+  if (picks.length === 0){ state.passed[key]=true; save(); log(`Seção concluída: <b>${sectionLabel(key)}</b>.`); gotoStart(); return; }
+
+  let idx = 0, correct = 0;
+
+  modalTitle.textContent = 'Quiz — ' + sectionLabel(key);
+  sectionSummary.style.display='none';
+
+  function updateCounter(){ qCounter.textContent = `Acertos: ${correct} / ${idx}  (precisa de ${target})`; }
+
+  function ask(){
+    if (correct >= target){ return finish(); }
+    if (idx >= picks.length){
+      if (correct >= target) return finish();
+      qFeedback.innerHTML = `<span class='muted'>Você fez ${correct}/${picks.length}. Tente novamente.</span>`;
+      setTimeout(()=>{ quizModal.style.display='none'; }, 700);
+      return;
+    }
+    const item = picks[idx];
+    qContext.textContent = item.context;
+    qText.textContent = 'Pergunta: ' + item.q;
+    qAns.innerHTML = ''; qFeedback.textContent = ''; updateCounter();
+
+    item.a.forEach((opt, i)=>{
+      const b = document.createElement('button'); 
+      b.textContent = opt;
+      b.onclick = ()=>{
+        clickSfx();
+        qAns.querySelectorAll('button').forEach(x=>x.disabled=true); // evita duplo clique
+        if (Number(i) === Number(item.ok)){ correct++; qFeedback.innerHTML = "<b>✔ Correto!</b>"; }
+        else { qFeedback.innerHTML = "<b>✖ Resposta incorreta.</b>"; }
+        const done = (correct >= target);
+        idx++;
+        if (done){ setTimeout(finish, 350); return; }
+        if (idx >= picks.length){ setTimeout(()=>{ (correct >= target) ? finish() : (quizModal.style.display='none'); }, 350); return; }
+        setTimeout(ask, 350);
+      };
+      qAns.appendChild(b);
+    });
+  }
+
+  function finish(){
+    state.passed[key] = true; save();
+    log(`Seção concluída: <b>${sectionLabel(key)}</b>.`);
+    quizModal.style.display='none';
+    gotoStart();
+  }
+
+  quizModal.style.display='flex';
+  ask();
+}
+
+/* ===== utils ===== */
+function sectionLabel(k){ return (SECTIONS.find(s=>s.key===k)||{}).label||''; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
+
+/* ===== Relógio ===== */
+function pad(n){return (n<10?'0':'')+n;}
+function updateWatch(){
+  const now = new Date();
+  const hh = pad(now.getHours()), mm = pad(now.getMinutes()), ss = pad(now.getSeconds());
+  const days = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+  const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  document.getElementById('watch-hhmm').textContent = `${hh}:${mm}`;
+  document.getElementById('watch-sec').textContent = `${ss} s`;
+  document.getElementById('watch-date').textContent = `${days[now.getDay()]} • ${pad(now.getDate())} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  const bat = 50 + 40*Math.sin(now.getMinutes()/60*Math.PI*2);
+  document.getElementById('batFill').style.width = `${Math.max(8,Math.min(98,bat))}%`;
+}
+setInterval(updateWatch, 1000); updateWatch();
+
+/* ===== Inicialização ===== */
+btnReset.onclick = ()=>{ if(confirm("Apagar progresso salvo?")){ localStorage.removeItem("pipPedroStudyV1"); location.reload(); } };
+load(); gotoStart(); renderMap();
+log("Bem-vindo, Pedro. Estude cada área e faça os quizzes.");
+</script>
+</body>
+</html>
